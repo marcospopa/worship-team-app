@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/l
 
 COPY . .
 
+# Build React frontend
+RUN npm run build
+
 RUN chmod +x wait-for-it.sh
 
 EXPOSE 3000
