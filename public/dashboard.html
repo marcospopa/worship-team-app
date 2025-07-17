@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worship Team Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .songs-list, .setlists-list {
+            display: grid;
+            gap: 15px;
+        }
+        .song-card, .setlist-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .song-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .song-artist {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .song-key {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .hidden {
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Worship Team Dashboard</h1>
+            <div class="nav-buttons">
+                <span id="userInfo"></span>
+                <button class="btn btn-danger" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Quick Actions</h2>
+            <div class="nav-buttons">
+                <button class="btn" onclick="showAddSongForm()">Add Song</button>
+                <button class="btn" onclick="showCreateSetlistForm()">Create Setlist</button>
+                <button class="btn" onclick="loadSongs()">Refresh Songs</button>
+            </div>
+        </div>
+
+        <!-- Add Song Form -->
+        <div id="addSongForm" class="section hidden">
+            <h2>Add New Song</h2>
+            <form onsubmit="addSong(event)">
+                <div class="form-group">
+                    <label>Title:</label>
+                    <input type="text" id="songTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Artist:</label>
+                    <input type="text" id="songArtist">
+                </div>
+                <div class="form-group">
+                    <label>Key:</label>
+                    <input type="text" id="songKey" placeholder="e.g., C, G, Am">
+                </div>
+                <div class="form-group">
+                    <label>Lyrics:</label>
+                    <textarea id="songLyrics" placeholder="Enter lyrics here..."></textarea>
+                </div>
+                <button type="submit" class="btn">Add Song</button>
+                <button type="button" class="btn" onclick="hideAddSongForm()">Cancel</button>
+            </form>
+        </div>
+
+        <!-- Songs Section -->
+        <div class="section">
+            <h2>Songs</h2>
+            <div id="songsContainer" class="loading">Loading songs...</div>
+        </div>
+
+        <!-- Setlists Section -->
+        <div class="section">
+            <h2>Recent Setlists</h2>
+            <div id="setlistsContainer">
+                <p>Setlist functionality coming soon...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // Set authorization header for all requests
+        const authHeaders = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+
+        // Load user info (decode JWT to get username)
+        function loadUserInfo() {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                document.getElementById('userInfo').textContent = `Welcome, ${payload.username} (${payload.role})`;
+            } catch (e) {
+                console.error('Error parsing token:', e);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+
+        // Show/hide add song form
+        function showAddSongForm() {
+            document.getElementById('addSongForm').classList.remove('hidden');
+        }
+
+        function hideAddSongForm() {
+            document.getElementById('addSongForm').classList.add('hidden');
+            document.getElementById('addSongForm').querySelector('form').reset();
+        }
+
+        // Add new song
+        async function addSong(event) {
+            event.preventDefault();
+            
+            const songData = {
+                title: document.getElementById('songTitle').value,
+                artist: document.getElementById('songArtist').value,
+                key_signature: document.getElementById('songKey').value,
+                lyrics: document.getElementById('songLyrics').value
+            };
+
+            try {
+                const response = await fetch('/api/songs', {
+                    method: 'POST',
+                    headers: authHeaders,
+                    body: JSON.stringify(songData)
+                });
+
+                if (response.ok) {
+                    alert('Song added successfully!');
+                    hideAddSongForm();
+                    loadSongs();
+                } else {
+                    const error = await response.json();
+                    alert('Error adding song: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error adding song. Please try again.');
+            }
+        }
+
+        // Load songs
+        async function loadSongs() {
+            const container = document.getElementById('songsContainer');
+            container.innerHTML = '<div class="loading">Loading songs...</div>';
+
+            try {
+                const response = await fetch('/api/songs', {
+                    headers: authHeaders
+                });
+
+                if (response.ok) {
+                    const songs = await response.json();
+                    displaySongs(songs);
+                } else {
+                    container.innerHTML = '<p>Error loading songs. Please try again.</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                container.innerHTML = '<p>Error loading songs. Please try again.</p>';
+            }
+        }
+
+        // Display songs
+        function displaySongs(songs) {
+            const container = document.getElementById('songsContainer');
+            
+            if (songs.length === 0) {
+                container.innerHTML = '<p>No songs found. Add your first song!</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="songs-list">
+                    ${songs.map(song => `
+                        <div class="song-card">
+                            <div class="song-title">${song.title}</div>
+                            <div class="song-artist">Artist: ${song.artist || 'Unknown'}</div>
+                            <div class="song-key">Key: ${song.key_signature || 'Not specified'}</div>
+                            ${song.lyrics ? `<div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                                ${song.lyrics.substring(0, 100)}${song.lyrics.length > 100 ? '...' : ''}
+                            </div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Placeholder for setlist creation
+        function showCreateSetlistForm() {
+            alert('Setlist creation feature coming soon!');
+        }
+
+        // Initialize dashboard
+        loadUserInfo();
+        loadSongs();
+    </script>
+</body>
+</html>
