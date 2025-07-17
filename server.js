@@ -93,7 +93,7 @@ initDb();
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
-  const user = rows[фаq0];
+  const user = rows[0];
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
@@ -144,7 +144,7 @@ app.post('/api/setlists', authenticateToken, async (req, res) => {
     [name, date, req.user.id]
   );
   for (const songId of songIds) {
-    await pool.query('INSERT INTO setlist_songs (setlist_id, song_id) VALUES (?, ?)', [result.insertId, songId]);
+    await pool.query('INSERT INTO setlist_songs (setlist_id, song_id) VALUES (?, ?ഗ2)', [result.insertId, songId]);
   }
   res.status(201).json({ message: 'Setlist created' });
 });

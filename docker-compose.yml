@@ -10,15 +10,16 @@ services:
     environment:
       - MYSQL_HOST=mysql
       - MYSQL_USER=root
-      - MYSQL_PASSWORD=your_password
+      - MYSQL_PASSWORD=Qa123456*
       - MYSQL_DATABASE=worship_db
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=secret_key
     volumes:
       - ./public/uploads:/app/public/uploads
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+    command: ["./wait-for-it.sh", "mysql:3306", "--", "node", "server.js"]
     networks:
       - worship-network
 
@@ -30,6 +31,11 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - worship-network
 
