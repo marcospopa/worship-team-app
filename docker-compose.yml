@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=your_password
+      - MYSQL_DATABASE=worship_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=secret_key
+    volumes:
+      - ./public/uploads:/app/public/uploads
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - worship-network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=your_password
+      - MYSQL_DATABASE=worship_db
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - worship-network
+
+  redis:
+    image: redis:7.0
+    networks:
+      - worship-network
+
+volumes:
+  mysql-data:
+
+networks:
+  worship-network:
+    driver: bridge
