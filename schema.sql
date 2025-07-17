@@ -35,4 +35,4 @@ CREATE TABLE setlist_songs (
 );
 
 INSERT IGNORE INTO users (username, password, role)
-VALUES ('admin', '$2b$10$5Qz3Xz4z7Z8X9Y0W1V2U3u4V5W6X7Y8Z9A0B1C2D3E4F5G6H7I8J9', 'admin');
+VALUES ('admin', '$2a$10$IEa1W5kd9BPTL/zR2p4Px.O5Mt5QYYd4GFpwZ0.F1EusJPIbDFExi', 'admin');
